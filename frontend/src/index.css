@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans antialiased selection:bg-accent-subtle selection:text-accent;
+    min-height: 100vh;
+  }
+
+  /* Prevent zoom on focus in iOS mobile safari */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  @screen sm {
+    input, select, textarea {
+      font-size: 14px;
+    }
+  }
+
+  /* Custom subtle scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #F2EFE9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D1CBC0;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #868A82;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
