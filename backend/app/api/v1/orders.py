@@ -5,13 +5,14 @@ import string
 from typing import Optional
 from uuid import UUID
 from urllib.parse import quote
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import selectinload
 
 from backend.app.database import get_db
 from backend.app.config import settings
+from backend.app.core.receipt import generate_receipt_pdf
 from backend.app.models import Student, Report, ReportVerification, Order, Payment, ActivityLog
 from backend.app.schemas import (
     OrderCreateRequest,
@@ -323,4 +324,42 @@ async def get_order(
         ],
         created_at=order.created_at,
         completed_at=order.completed_at,
+    )
+
+
+@router.get("/{order_id}/receipt")
+async def download_order_receipt(
+    order_id: str,
+    mobile: Optional[str] = Query(None, description="Mobile number for student authentication"),
+    db: AsyncSession = Depends(get_db),
+):
+    query = (
+        select(Order)
+        .options(
+            selectinload(Order.student),
+            selectinload(Order.report),
+            selectinload(Order.payments),
+        )
+        .where(Order.id == order_id)
+    )
+    res = await db.execute(query)
+    order = res.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order {order_id} not found.",
+        )
+
+    if mobile and order.student.mobile_number != mobile.strip():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The mobile number provided does not match the order records.",
+        )
+
+    receipt_bytes = generate_receipt_pdf(order)
+    return Response(
+        content=receipt_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=Receipt_{order.id}.pdf"},
     )

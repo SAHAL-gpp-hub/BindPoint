@@ -16,13 +16,13 @@ import { AdminDashboard } from "./components/admin/AdminDashboard";
 export const App: React.FC = () => {
   // Stepper state (1..6)
   const [currentStep, setCurrentStep] = useState<number>(() => {
-    const saved = localStorage.getItem("printstation_step");
+    const saved = sessionStorage.getItem("printstation_step");
     return saved ? parseInt(saved, 10) : 1;
   });
 
   // Persistent student details
   const [student, setStudent] = useState<StudentData>(() => {
-    const saved = localStorage.getItem("printstation_student");
+    const saved = sessionStorage.getItem("printstation_student");
     return saved ? JSON.parse(saved) : { full_name: "", enrollment_number: "", mobile_number: "" };
   });
 
@@ -34,7 +34,7 @@ export const App: React.FC = () => {
 
   // Active order
   const [order, setOrder] = useState<OrderDetail | null>(() => {
-    const saved = localStorage.getItem("printstation_order");
+    const saved = sessionStorage.getItem("printstation_order");
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -46,13 +46,13 @@ export const App: React.FC = () => {
   // Status lookup modal
   const [showLookupModal, setShowLookupModal] = useState<boolean>(false);
 
-  // Sync to localStorage
+  // Sync to sessionStorage
   useEffect(() => {
-    localStorage.setItem("printstation_step", currentStep.toString());
+    sessionStorage.setItem("printstation_step", currentStep.toString());
   }, [currentStep]);
 
   useEffect(() => {
-    localStorage.setItem("printstation_student", JSON.stringify(student));
+    sessionStorage.setItem("printstation_student", JSON.stringify(student));
   }, [student]);
 
   useEffect(() => {
@@ -61,8 +61,8 @@ export const App: React.FC = () => {
   }, [report]);
 
   useEffect(() => {
-    if (order) localStorage.setItem("printstation_order", JSON.stringify(order));
-    else localStorage.removeItem("printstation_order");
+    if (order) sessionStorage.setItem("printstation_order", JSON.stringify(order));
+    else sessionStorage.removeItem("printstation_order");
   }, [order]);
 
   // Check admin session on startup
@@ -113,13 +113,16 @@ export const App: React.FC = () => {
     setCurrentStep(6);
   };
 
-  // Reset entire flow for a new report
+  // Reset entire flow for a new report or upon order completion
   const handleResetFlow = () => {
     setReport(null);
     setOrder(null);
     setCurrentStep(1);
+    setStudent({ full_name: "", enrollment_number: "", mobile_number: "" });
+    sessionStorage.removeItem("printstation_step");
+    sessionStorage.removeItem("printstation_student");
     sessionStorage.removeItem("printstation_report");
-    localStorage.removeItem("printstation_order");
+    sessionStorage.removeItem("printstation_order");
   };
 
   const handleAdminClick = () => {
@@ -204,10 +207,17 @@ export const App: React.FC = () => {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-line py-4 px-4 bg-surface text-center text-xs text-ink-muted">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>College Project Report Printing Station • Operational Duplex Dispatch</span>
-          <span className="font-mono text-[11px]">A4 Standard • Manual UPI Verification</span>
+      <footer className="border-t border-line py-5 px-4 bg-surface/80 backdrop-blur-sm text-center text-xs text-ink-muted">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="font-medium text-ink-secondary">College Project Report Printing Station</span>
+            <span className="text-line-dark">•</span>
+            <span>Operational Duplex Dispatch</span>
+          </div>
+          <span className="font-mono text-[11px] bg-surface-subtle px-2.5 py-1 rounded-full border border-line">
+            A4 Standard • Manual UPI Verification
+          </span>
         </div>
       </footer>
 

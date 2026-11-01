@@ -78,44 +78,44 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-      <div className="bg-surface border border-line rounded-md max-w-lg w-full p-6 shadow-xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm">
+      <div className="glass-modal border border-line rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-ink-muted hover:text-ink p-1 rounded hover:bg-surface-subtle"
+          className="absolute top-4 right-4 text-ink-muted hover:text-ink p-1.5 rounded-lg hover:bg-surface-subtle transition-all"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="mb-4 pb-3 border-b border-line">
+        <div className="mb-5 pb-3.5 border-b border-line">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-bold text-ink">{order.order_id}</span>
-            <span className="text-[11px] font-mono bg-amber-100 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
+            <span className="font-mono text-base font-bold text-ink">{order.order_id}</span>
+            <span className="text-xs font-mono font-bold bg-amber-100 text-amber-950 px-2.5 py-0.5 rounded-full border border-amber-300">
               Payment Verification
             </span>
           </div>
-          <p className="text-xs text-ink-muted mt-0.5">
-            Submitted by {order.student.full_name} ({order.student.enrollment_number})
+          <p className="text-xs text-ink-secondary mt-1">
+            Submitted by <strong className="text-ink">{order.student.full_name}</strong> ({order.student.enrollment_number})
           </p>
         </div>
 
         {/* Payment Verification Data */}
         <div className="space-y-4 text-xs">
           {/* UTR Box */}
-          <div className="bg-surface-subtle p-3.5 rounded border border-line">
-            <span className="text-[11px] text-ink-muted uppercase tracking-wider block mb-1">
+          <div className="bg-surface-subtle/80 p-4 rounded-xl border border-line shadow-xs">
+            <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block mb-1.5">
               Submitted 12-Digit Transaction UTR
             </span>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-base font-bold text-ink tracking-wider">
+              <span className="font-mono text-lg font-bold text-ink tracking-wider">
                 {order.payment?.utr_number || "No UTR recorded"}
               </span>
               {order.payment?.utr_number && (
                 <button
                   type="button"
                   onClick={handleCopyUtr}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-ink bg-surface border border-line rounded hover:bg-surface-subtle transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink bg-surface border border-line rounded-lg hover:bg-surface-subtle shadow-xs transition-all active:scale-[0.98]"
                 >
                   {copiedUtr ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedUtr ? "Copied" : "Copy UTR"}</span>
@@ -123,8 +123,8 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
               )}
             </div>
             {order.payment?.payer_vpa && (
-              <p className="text-xs text-ink-secondary mt-2">
-                Payer UPI VPA: <span className="font-mono font-medium">{order.payment.payer_vpa}</span>
+              <p className="text-xs text-ink-secondary mt-2.5 pt-2 border-t border-line/60">
+                Payer UPI VPA: <span className="font-mono font-bold text-ink">{order.payment.payer_vpa}</span>
               </p>
             )}
           </div>
@@ -132,10 +132,10 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
           {/* Screenshot Preview if available */}
           {order.payment?.screenshot_url && (
             <div>
-              <span className="text-[11px] text-ink-muted uppercase tracking-wider block mb-1.5">
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block mb-1.5">
                 Attached Payment Screenshot
               </span>
-              <div className="border border-line rounded p-2 bg-surface-subtle text-center">
+              <div className="border border-line rounded-xl p-2.5 bg-surface-subtle/80 text-center shadow-xs">
                 <a
                   href={order.payment.screenshot_url}
                   target="_blank"
@@ -145,10 +145,10 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
                   <img
                     src={order.payment.screenshot_url}
                     alt="Payment Screenshot"
-                    className="max-h-48 rounded mx-auto border border-line object-contain"
+                    className="max-h-48 rounded-lg mx-auto border border-line object-contain shadow-xs"
                   />
-                  <div className="absolute inset-0 bg-ink/30 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center text-surface text-xs font-medium gap-1">
-                    <ExternalLink className="w-3.5 h-3.5" />
+                  <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center text-surface text-xs font-semibold gap-1.5">
+                    <ExternalLink className="w-4 h-4" />
                     <span>Open Full View</span>
                   </div>
                 </a>
@@ -158,12 +158,12 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
 
           {/* Expected vs Received Amount */}
           <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-3 bg-surface-subtle border border-line rounded">
-              <span className="text-[11px] text-ink-muted uppercase block">Amount Due</span>
-              <span className="font-mono text-base font-bold text-ink">₹{expectedAmount.toFixed(2)}</span>
+            <div className="p-3.5 bg-surface-subtle/80 border border-line rounded-xl shadow-xs">
+              <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block">Amount Due</span>
+              <span className="font-mono text-lg font-bold text-ink mt-0.5 block">₹{expectedAmount.toFixed(2)}</span>
             </div>
-            <div className="p-3 bg-surface border border-line rounded">
-              <label className="text-[11px] text-ink-muted uppercase block mb-1">
+            <div className="p-3.5 bg-surface border border-line rounded-xl shadow-xs">
+              <label className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block mb-1">
                 Amount Confirmed (₹)
               </label>
               <input
@@ -171,17 +171,17 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
                 step="0.01"
                 value={receivedAmount}
                 onChange={(e) => setReceivedAmount(e.target.value)}
-                className="w-full px-2 py-1 font-mono text-sm font-bold text-accent border border-line rounded focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full px-2.5 py-1 font-mono text-base font-bold text-accent border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
               />
             </div>
           </div>
 
           {hasMismatch && (
-            <div className="p-3 bg-amber-50 border border-amber-300 rounded text-amber-900 text-xs flex items-start gap-2">
+            <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-xs flex items-start gap-2 shadow-xs">
               <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">Amount Mismatch Warning</p>
-                <p>
+                <p className="font-bold">Amount Mismatch Warning</p>
+                <p className="leading-relaxed mt-0.5">
                   Calculated order cost is ₹{expectedAmount.toFixed(2)}, but confirmed amount is entered as ₹{numReceived.toFixed(2)}. This discrepancy will be logged in the permanent audit trail.
                 </p>
               </div>
@@ -189,16 +189,16 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
           )}
 
           {errorMsg && (
-            <div className="p-2.5 bg-red-50 border border-red-200 rounded text-xs text-red-800">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 shadow-xs">
               {errorMsg}
             </div>
           )}
 
           {/* Rejection Input Box if user toggled reject */}
           {showRejectBox && (
-            <div className="p-3 bg-red-50/50 border border-red-200 rounded space-y-2">
-              <label className="block text-xs font-semibold text-red-900">
-                Reason for Rejection <span className="text-red-600">*</span>
+            <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-xl space-y-2.5 shadow-xs">
+              <label className="block text-xs font-bold text-rose-900 uppercase tracking-wider">
+                Reason for Rejection <span className="text-rose-600">*</span>
               </label>
               <textarea
                 rows={2}
@@ -206,16 +206,16 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
                 placeholder="e.g. UTR not found on bank statement. Please verify and re-submit."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-surface border border-red-300 rounded text-xs text-ink focus:outline-none focus:ring-1 focus:ring-red-500"
+                className="w-full px-3 py-2 bg-surface border border-rose-300 rounded-lg text-xs text-ink focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
               />
-              <p className="text-[11px] text-red-700">
+              <p className="text-[11px] text-rose-700 font-medium">
                 The student will see this reason on their tracking screen and will be allowed to submit a new UTR.
               </p>
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowRejectBox(false)}
-                  className="px-3 py-1 text-xs border border-line rounded text-ink-secondary hover:bg-surface"
+                  className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg text-ink-secondary hover:bg-surface transition-all"
                 >
                   Cancel
                 </button>
@@ -223,7 +223,7 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
                   type="button"
                   onClick={handleReject}
                   disabled={isSubmitting || !rejectReason.trim()}
-                  className="px-3 py-1 text-xs font-semibold bg-red-700 text-surface rounded hover:bg-red-800 disabled:opacity-40"
+                  className="px-3.5 py-1.5 text-xs font-bold bg-rose-700 text-surface rounded-lg hover:bg-rose-800 disabled:opacity-40 transition-all shadow-xs"
                 >
                   Confirm Rejection
                 </button>
@@ -233,11 +233,11 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
 
           {/* Action Buttons */}
           {!showRejectBox && (
-            <div className="pt-3 border-t border-line flex items-center justify-between gap-3">
+            <div className="pt-3.5 border-t border-line flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={() => setShowRejectBox(true)}
-                className="px-4 py-2 border border-red-200 text-red-700 hover:bg-red-50 rounded text-xs font-medium transition-colors flex items-center gap-1.5"
+                className="px-4 py-2.5 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-[0.98]"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Reject Payment</span>
@@ -247,7 +247,7 @@ export const PaymentVerificationModal: React.FC<PaymentModalProps> = ({
                 type="button"
                 onClick={handleConfirm}
                 disabled={isSubmitting}
-                className="flex-1 py-2 px-4 bg-accent hover:bg-accent-hover text-surface rounded text-xs font-semibold shadow-subtle flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="flex-1 py-2.5 px-4 bg-gradient-to-r from-accent to-accent-light hover:from-accent-hover hover:to-accent text-surface rounded-xl text-xs font-bold shadow-md shadow-accent/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.99]"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Confirm Payment (Mark Paid)</span>

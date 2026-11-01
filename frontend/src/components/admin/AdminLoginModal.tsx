@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { api } from "../../lib/api";
-import { X, Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
+import { X, Lock, Mail, ArrowRight, AlertCircle, ShieldCheck } from "lucide-react";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -38,65 +38,65 @@ export const AdminLoginModal: React.FC<LoginModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-      <div className="bg-surface border border-line rounded-md max-w-sm w-full p-6 shadow-lg relative">
+      <div className="glass-modal rounded-2xl max-w-sm w-full p-6 sm:p-7 shadow-2xl relative border border-line">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-ink-muted hover:text-ink p-1 rounded hover:bg-surface-subtle"
+          className="absolute top-4 right-4 text-ink-muted hover:text-ink p-1.5 rounded-lg hover:bg-surface-subtle transition-all"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="mb-5 text-center">
-          <div className="w-10 h-10 rounded bg-accent text-surface flex items-center justify-center mx-auto mb-2.5">
-            <Lock className="w-5 h-5" />
+        <div className="mb-6 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-accent-light text-surface flex items-center justify-center mx-auto mb-3 shadow-md shadow-accent/20">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-semibold tracking-tight text-ink">
+          <h2 className="text-xl font-bold tracking-tight text-ink">
             Print Station Admin
           </h2>
-          <p className="text-xs text-ink-secondary mt-0.5">
+          <p className="text-xs text-ink-secondary mt-1">
             Authenticate to manage orders, payments and batches.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
               Admin Email
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-ink-muted absolute left-3 top-2.5 pointer-events-none" />
+              <Mail className="w-4 h-4 text-ink-muted absolute left-3.5 top-3 pointer-events-none" />
               <input
                 type="email"
                 required
                 placeholder="admin@printstation.local"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-line rounded text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-surface border border-line rounded-xl text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent shadow-xs transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink uppercase tracking-wider mb-1">
+            <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-ink-muted absolute left-3 top-2.5 pointer-events-none" />
+              <Lock className="w-4 h-4 text-ink-muted absolute left-3.5 top-3 pointer-events-none" />
               <input
                 type="password"
                 required
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-surface border border-line rounded text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-surface border border-line rounded-xl text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent shadow-xs transition-all"
               />
             </div>
           </div>
 
           {error && (
-            <div className="p-2.5 bg-red-50 border border-red-200 rounded text-xs text-red-800 flex items-start gap-1.5">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2 shadow-xs">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
@@ -105,7 +105,7 @@ export const AdminLoginModal: React.FC<LoginModalProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full min-h-[44px] bg-accent hover:bg-accent-hover active:bg-accent text-surface text-xs sm:text-sm font-medium py-2.5 px-4 rounded shadow-subtle flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full min-h-[48px] bg-gradient-to-r from-accent to-accent-light hover:from-accent-hover hover:to-accent text-surface text-xs sm:text-sm font-semibold py-3 px-5 rounded-xl shadow-md shadow-accent/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.99]"
             >
               {isLoading ? (
                 <>

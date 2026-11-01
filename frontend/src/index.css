@@ -10,6 +10,10 @@
   body {
     @apply bg-canvas text-ink font-sans antialiased selection:bg-accent-subtle selection:text-accent;
     min-height: 100vh;
+    background-image: 
+      radial-gradient(at 100% 0%, rgba(15, 61, 46, 0.03) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(15, 61, 46, 0.02) 0px, transparent 50%);
+    background-attachment: fixed;
   }
 
   /* Prevent zoom on focus in iOS mobile safari */
@@ -28,14 +32,14 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #F2EFE9;
+    background: #F4F6F4;
   }
   ::-webkit-scrollbar-thumb {
-    background: #D1CBC0;
-    border-radius: 3px;
+    background: #CFD6D1;
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #868A82;
+    background: #76827C;
   }
 }
 
@@ -45,4 +49,24 @@
 
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Glassmorphism card surfaces */
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(225, 230, 226, 0.85);
+}
+
+.glass-modal {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(225, 230, 226, 0.9);
+}
+
+/* Subtle accent transitions */
+.btn-primary {
+  @apply bg-gradient-to-r from-accent to-accent-light hover:from-accent-hover hover:to-accent text-surface font-medium shadow-subtle hover:shadow-md transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none;
 }

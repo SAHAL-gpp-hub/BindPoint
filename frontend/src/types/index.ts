@@ -96,3 +96,32 @@ export interface OrderListItem {
   created_at: string;
   completed_at?: string | null;
 }
+
+export interface BatchSummary {
+  id: string;
+  batch_name: string;
+  created_at: string;
+  total_reports: number;
+  total_pages: number;
+  total_sheets: number;
+  completed_reports: number;
+  progress_percent: number;
+}
+
+export interface BatchOrderItem {
+  order_id: string;
+  student_name: string;
+  enrollment_number: string;
+  mobile_number: string;
+  original_filename: string;
+  page_count: number;
+  total_sheets: number;
+  total_amount: number;
+  print_status: string;
+  created_at: string;
+  completed_at?: string | null;
+}
+
+export interface BatchDetail extends BatchSummary {
+  orders: BatchOrderItem[];
+}

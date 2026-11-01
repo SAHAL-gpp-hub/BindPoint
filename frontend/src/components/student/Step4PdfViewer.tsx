@@ -13,6 +13,8 @@ import {
   RotateCcw,
   FileCheck,
   LayoutGrid,
+  Info,
+  Check,
 } from "lucide-react";
 
 // Point PDF.js to the worker
@@ -160,11 +162,10 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [currentPage, totalPages]);
 
-  // Check if student has inspected page 1, last page, and at least 80% of pages
-  const hasSeenPage1 = viewedPages.has(1);
-  const hasSeenLastPage = viewedPages.has(totalPages);
+  // Check if student has inspected EVERY single page
   const viewedCount = viewedPages.size;
-  const isSufficientlyViewed = hasSeenPage1 && hasSeenLastPage && (totalPages <= 5 ? viewedCount === totalPages : viewedCount >= Math.ceil(totalPages * 0.7));
+  const isSufficientlyViewed = totalPages > 0 && viewedCount === totalPages;
+  const progressPercent = Math.round((viewedCount / Math.max(totalPages, 1)) * 100);
 
   const handleFinalConfirm = async () => {
     setIsVerifying(true);
@@ -182,29 +183,33 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
   const isCurrentPageSpecial = currentPage === 1;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6" ref={containerRef}>
+    <div className="max-w-4xl mx-auto px-4 pt-3 pb-8 sm:pt-4 sm:pb-12" ref={containerRef}>
       {/* Step Header */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-ink flex items-center gap-2">
-            <span>Mandatory PDF Verification</span>
-            <span className="text-xs font-mono font-medium bg-amber-100 text-amber-900 px-2 py-0.5 rounded border border-amber-300">
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-ink">
+              Mandatory PDF Verification
+            </h1>
+            <span className="text-[11px] font-mono font-semibold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
               Required
             </span>
-          </h1>
-          <p className="text-xs sm:text-sm text-ink-secondary mt-0.5">
-            Carefully verify page orientation, margins, charts, and page numbers before confirming.
+          </div>
+          <p className="text-xs sm:text-sm text-ink-secondary leading-relaxed">
+            Carefully verify page orientation, margins, charts, and page numbers. Every single page must be viewed before payment unlocks.
           </p>
         </div>
 
-        {/* Paper indicator badge */}
-        <div className="self-start sm:self-auto">
+        {/* Paper indicator badge & Verification Progress */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           {isCurrentPageSpecial ? (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
               Page 1: Special Paper (First Page)
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono font-medium bg-blue-50 text-blue-800 border border-blue-200">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Page {currentPage}: Normal Colour Duplex
             </span>
           )}
@@ -212,22 +217,22 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
       </div>
 
       {/* Viewer Main Frame */}
-      <div className="bg-surface-subtle border border-line rounded-md overflow-hidden flex flex-col shadow-subtle">
+      <div className="glass-card rounded-2xl border border-line overflow-hidden flex flex-col shadow-card">
         {/* Top Control Bar */}
-        <div className="bg-surface border-b border-line px-3 py-2 flex items-center justify-between text-xs">
+        <div className="bg-surface border-b border-line px-3.5 py-2.5 flex items-center justify-between text-xs">
           {/* Navigation Controls */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={handlePrevPage}
               disabled={currentPage <= 1}
-              className="p-1.5 rounded hover:bg-surface-subtle disabled:opacity-30 disabled:pointer-events-none text-ink border border-line transition-colors"
+              className="p-1.5 rounded-lg hover:bg-surface-subtle disabled:opacity-30 disabled:pointer-events-none text-ink border border-line shadow-xs transition-all active:scale-[0.98]"
               title="Previous Page (Left Arrow)"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="font-mono text-xs text-ink px-2 font-medium">
+            <span className="font-mono text-xs text-ink px-2 font-bold tabular-nums">
               Page {currentPage} of {totalPages}
             </span>
 
@@ -235,7 +240,7 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
               type="button"
               onClick={handleNextPage}
               disabled={currentPage >= totalPages}
-              className="p-1.5 rounded hover:bg-surface-subtle disabled:opacity-30 disabled:pointer-events-none text-ink border border-line transition-colors"
+              className="p-1.5 rounded-lg hover:bg-surface-subtle disabled:opacity-30 disabled:pointer-events-none text-ink border border-line shadow-xs transition-all active:scale-[0.98]"
               title="Next Page (Right Arrow)"
             >
               <ChevronRight className="w-4 h-4" />
@@ -247,8 +252,10 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
             <button
               type="button"
               onClick={() => setShowThumbnails(!showThumbnails)}
-              className={`p-1.5 rounded border border-line transition-colors text-xs flex items-center gap-1 ${
-                showThumbnails ? "bg-accent-subtle text-accent border-accent" : "hover:bg-surface-subtle text-ink-secondary"
+              className={`p-1.5 rounded-lg border transition-all text-xs flex items-center gap-1.5 shadow-xs ${
+                showThumbnails
+                  ? "bg-accent-subtle text-accent border-accent/40 font-semibold"
+                  : "border-line hover:bg-surface-subtle text-ink-secondary"
               }`}
               title="Toggle Thumbnails"
             >
@@ -256,117 +263,140 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
               <span className="hidden sm:inline">Thumbnails</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleZoomOut}
-              className="p-1.5 rounded hover:bg-surface-subtle text-ink border border-line transition-colors"
-              title="Zoom Out (-)"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-
-            <span className="text-[11px] font-mono text-ink-muted w-10 text-center hidden sm:inline">
-              {Math.round(scale * 100)}%
-            </span>
-
-            <button
-              type="button"
-              onClick={handleZoomIn}
-              className="p-1.5 rounded hover:bg-surface-subtle text-ink border border-line transition-colors"
-              title="Zoom In (+)"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={handleFitWidth}
-              className="px-2 py-1 rounded hover:bg-surface-subtle text-ink border border-line text-[11px] font-medium hidden sm:inline"
-            >
-              Fit
-            </button>
+            <div className="hidden sm:flex items-center border border-line rounded-lg overflow-hidden shadow-xs">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                className="p-1.5 hover:bg-surface-subtle text-ink-secondary border-r border-line"
+                title="Zoom Out (-)"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleFitWidth}
+                className="px-2 py-1 text-[11px] font-mono hover:bg-surface-subtle text-ink-secondary border-r border-line"
+                title="Fit Page Width"
+              >
+                {Math.round(scale * 100)}%
+              </button>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                className="p-1.5 hover:bg-surface-subtle text-ink-secondary"
+                title="Zoom In (+)"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="p-1.5 rounded hover:bg-surface-subtle text-ink border border-line transition-colors"
-              title="Toggle Fullscreen"
+              className="p-1.5 rounded-lg border border-line hover:bg-surface-subtle text-ink-secondary shadow-xs transition-all"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
 
-        {/* Viewer Viewport with optional Thumbnail rail */}
-        <div className="flex flex-1 min-h-[440px] sm:min-h-[580px] max-h-[70vh] overflow-hidden relative">
-          {/* Thumbnails Sidebar */}
+        {/* Viewer Body: Thumbnails Sidebar + Canvas Center */}
+        <div className="flex min-h-[460px] sm:min-h-[560px] bg-canvas-subtle relative overflow-hidden">
+          {/* Thumbnails Drawer */}
           {showThumbnails && (
-            <div className="w-28 sm:w-36 bg-surface border-r border-line overflow-y-auto p-2 space-y-2 shrink-0">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-                <button
-                  key={pg}
-                  type="button"
-                  onClick={() => setCurrentPage(pg)}
-                  className={`w-full text-center p-1.5 rounded border text-xs font-mono transition-colors block ${
-                    currentPage === pg
-                      ? "border-accent bg-accent-subtle font-semibold text-accent"
-                      : "border-line hover:border-ink-muted text-ink-secondary bg-surface-subtle"
-                  }`}
-                >
-                  <div className="text-[10px] text-ink-muted mb-0.5">
-                    {pg === 1 ? "Special" : "Duplex"}
-                  </div>
-                  <div>Page {pg}</div>
-                </button>
-              ))}
+            <div className="w-32 sm:w-44 bg-surface border-r border-line p-2 overflow-y-auto max-h-[560px] space-y-2 shrink-0">
+              <div className="text-[10px] uppercase font-mono font-bold text-ink-muted px-1 py-0.5">
+                Pages ({viewedCount}/{totalPages} viewed)
+              </div>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pNum) => {
+                const isViewed = viewedPages.has(pNum);
+                const isCurrent = currentPage === pNum;
+                return (
+                  <button
+                    key={pNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pNum)}
+                    className={`w-full p-1.5 rounded-lg border text-left flex items-center justify-between text-xs transition-all ${
+                      isCurrent
+                        ? "border-accent bg-accent-subtle/80 text-accent font-bold shadow-xs"
+                        : "border-line bg-surface hover:bg-surface-subtle text-ink-secondary"
+                    }`}
+                  >
+                    <span className="font-mono text-xs font-semibold">Page {pNum}</span>
+                    {isViewed ? (
+                      <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      </span>
+                    ) : (
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
 
-          {/* Canvas Rendering Area */}
-          <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-line/20">
+          {/* Central PDF Canvas Display */}
+          <div className="flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-xs font-medium text-ink">Loading PDF Viewer...</p>
+              <div className="text-center p-8">
+                <div className="w-10 h-10 border-3 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs font-semibold text-ink">Loading High-Resolution PDF...</p>
+                <p className="text-[11px] text-ink-muted mt-1">Rendering duplex preview</p>
               </div>
             ) : error ? (
-              <div className="text-center p-6 bg-red-50 border border-red-200 rounded max-w-md text-red-900 text-xs">
-                <AlertTriangle className="w-6 h-6 text-red-600 mx-auto mb-2" />
+              <div className="text-center p-6 bg-rose-50 border border-rose-200 rounded-xl max-w-md text-rose-900 text-xs shadow-xs">
+                <AlertTriangle className="w-6 h-6 text-rose-600 mx-auto mb-2" />
                 <p className="font-semibold">{error}</p>
               </div>
             ) : (
-              <canvas ref={canvasRef} className="shadow-md rounded bg-surface border border-line" />
+              <canvas ref={canvasRef} className="shadow-2xl rounded-lg bg-surface border border-line max-w-full" />
             )}
           </div>
         </div>
 
-        {/* Physical bind station note */}
-        <div className="bg-surface border-t border-line px-3 py-2 text-[11px] text-ink-secondary flex items-center justify-between">
-          <span className="truncate">
-            ℹ️ Extra blank special-paper sheet will be inserted at physical bind station (not previewed).
-          </span>
-          <span className="font-mono text-ink-muted text-[10px] shrink-0 ml-2">
-            Viewed: {viewedPages.size}/{totalPages} pages
-          </span>
+        {/* Physical bind station note - COMPLETELY EMOJI-FREE */}
+        <div className="bg-surface border-t border-line px-4 py-2.5 text-xs text-ink-secondary flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 truncate">
+            <Info className="w-4 h-4 text-accent shrink-0" />
+            <span className="truncate">
+              Extra blank special-paper sheet will be inserted at physical bind station (not previewed).
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-mono text-ink-muted">
+              Verification:
+            </span>
+            <div className="w-20 bg-line-subtle h-2 rounded-full overflow-hidden border border-line">
+              <div
+                className="bg-accent h-full transition-all duration-200"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <span className={`font-mono text-xs font-bold ${isSufficientlyViewed ? "text-emerald-700" : "text-amber-700"}`}>
+              {viewedCount}/{totalPages} ({progressPercent}%)
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Mandatory Friction & Final Confirmation Form */}
-      <div className="mt-6 bg-surface border border-line rounded-md p-4 sm:p-5 shadow-subtle">
-        <div className="space-y-3">
-          <div className="flex items-start gap-2.5">
+      <div className="mt-6 glass-card rounded-2xl border border-line p-5 sm:p-6 shadow-card">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
             <input
               type="checkbox"
               id="confirm-checkbox"
               checked={confirmChecked}
               onChange={(e) => setConfirmChecked(e.target.checked)}
               disabled={!isSufficientlyViewed}
-              className="mt-0.5 w-4 h-4 text-accent border-line rounded focus:ring-accent disabled:opacity-40"
+              className="mt-1 w-4.5 h-4.5 text-accent border-line rounded focus:ring-accent disabled:opacity-40 cursor-pointer"
             />
             <label
               htmlFor="confirm-checkbox"
               className={`text-xs sm:text-sm leading-relaxed ${
-                isSufficientlyViewed ? "text-ink cursor-pointer" : "text-ink-muted cursor-not-allowed"
+                isSufficientlyViewed ? "text-ink cursor-pointer font-medium" : "text-ink-muted cursor-not-allowed"
               }`}
             >
               I have carefully inspected my complete PDF, including page 1, the last page, formatting, diagrams, and page numbers. I confirm this document is final for physical duplex printing.
@@ -374,16 +404,16 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
           </div>
 
           {!isSufficientlyViewed && (
-            <p className="text-[11px] text-amber-800 bg-amber-50 px-3 py-1.5 rounded border border-amber-200 flex items-center gap-1.5 font-medium">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <div className="text-xs text-amber-900 bg-amber-50 px-3.5 py-2 rounded-xl border border-amber-200 flex items-center gap-2 font-medium">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
               <span>
-                Please review through your document (must inspect page 1 and page {totalPages}) to unlock confirmation.
+                Please inspect every page of your document (reviewed {viewedCount} of {totalPages} pages) to unlock confirmation.
               </span>
-            </p>
+            </div>
           )}
 
           {error && (
-            <p className="text-xs text-red-600 font-medium">{error}</p>
+            <p className="text-xs text-rose-600 font-semibold">{error}</p>
           )}
 
           {/* Two Required Spec Options */}
@@ -392,7 +422,7 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
             <button
               type="button"
               onClick={onNeedsChanges}
-              className="min-h-[44px] px-4 py-2.5 border border-line hover:bg-surface-subtle rounded text-xs sm:text-sm font-medium text-ink-secondary transition-colors flex items-center justify-center gap-1.5"
+              className="min-h-[48px] px-4 py-2.5 border border-line hover:bg-surface-subtle rounded-xl text-xs sm:text-sm font-semibold text-ink-secondary transition-all flex items-center justify-center gap-2 shadow-xs active:scale-[0.98]"
             >
               <RotateCcw className="w-4 h-4" />
               <span>I Need to Make Changes</span>
@@ -403,7 +433,7 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
               type="button"
               onClick={handleFinalConfirm}
               disabled={!confirmChecked || isVerifying || !isSufficientlyViewed}
-              className="min-h-[44px] flex-1 sm:flex-initial sm:min-w-[240px] bg-accent hover:bg-accent-hover active:bg-accent text-surface text-xs sm:text-sm font-medium py-2.5 px-5 rounded shadow-subtle flex items-center justify-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="min-h-[48px] flex-1 sm:flex-initial sm:min-w-[280px] bg-gradient-to-r from-accent to-accent-light hover:from-accent-hover hover:to-accent text-surface text-xs sm:text-sm font-semibold py-3 px-5 rounded-xl shadow-md shadow-accent/20 flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99]"
             >
               {isVerifying ? (
                 <>

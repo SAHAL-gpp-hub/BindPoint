@@ -1,13 +1,14 @@
 import csv
 import io
 import re
+import secrets
 import zipfile
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse, StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -15,9 +16,11 @@ from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.api.deps import get_current_admin
+from backend.app.api.deps import get_current_admin, verify_admin_csrf
 from backend.app.api.v1.orders import build_upi_deep_link
 from backend.app.config import settings
+from backend.app.core.limiter import limiter
+from backend.app.core.receipt import generate_receipt_pdf
 from backend.app.core.security import (
     create_signed_token,
     verify_password,
@@ -39,7 +42,7 @@ from backend.app.schemas import (
     StudentSummary,
 )
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(verify_admin_csrf)])
 
 
 def sanitize_filename_part(text: str) -> str:
@@ -49,7 +52,9 @@ def sanitize_filename_part(text: str) -> str:
 
 
 @router.post("/auth/login")
+@limiter.limit("5/minute")
 async def admin_login(
+    request: Request,
     payload: AdminLoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_db),
@@ -69,6 +74,7 @@ async def admin_login(
         {"admin_id": str(admin.id), "email": admin.email, "role": "admin"},
         expires_in_seconds=604800,
     )
+    csrf_token = secrets.token_hex(32)
 
     response.set_cookie(
         key="admin_session",
@@ -78,17 +84,27 @@ async def admin_login(
         samesite="lax",
         max_age=604800,
     )
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=not settings.DEBUG,
+        samesite="lax",
+        max_age=604800,
+    )
 
     return {
         "status": "success",
         "admin": {"id": str(admin.id), "email": admin.email},
         "token": token,
+        "csrf_token": csrf_token,
     }
 
 
 @router.post("/auth/logout")
 async def admin_logout(response: Response):
     response.delete_cookie(key="admin_session")
+    response.delete_cookie(key="csrf_token")
     return {"status": "logged_out"}
 
 
@@ -171,6 +187,8 @@ async def list_orders(
     q: Optional[str] = Query(None, description="Search name, enrollment, order ID, UTR"),
     payment_status: Optional[str] = Query(None),
     print_status: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None, description="Filter submission date from (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Filter submission date to (YYYY-MM-DD)"),
     sort_by: str = Query("created_at"),
     order_dir: str = Query("desc"),
     page: int = Query(1, ge=1),
@@ -195,6 +213,22 @@ async def list_orders(
         conditions.append(Order.payment_status == payment_status)
     if print_status:
         conditions.append(Order.print_status == print_status)
+
+    if date_from:
+        try:
+            dt_from = datetime.strptime(date_from.strip()[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            conditions.append(Order.created_at >= dt_from)
+        except Exception:
+            pass
+
+    if date_to:
+        try:
+            dt_to = datetime.strptime(date_to.strip()[:10], "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc
+            )
+            conditions.append(Order.created_at <= dt_to)
+        except Exception:
+            pass
 
     if q:
         term = f"%{q.strip()}%"
@@ -375,6 +409,35 @@ async def download_order_pdf(
         media_type="application/pdf",
         filename=safe_name,
         content_disposition_type="attachment",
+    )
+
+
+@router.get("/orders/{order_id}/receipt")
+async def download_admin_order_receipt(
+    order_id: str,
+    admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    query = (
+        select(Order)
+        .options(
+            selectinload(Order.student),
+            selectinload(Order.report),
+            selectinload(Order.payments),
+        )
+        .where(Order.id == order_id)
+    )
+    res = await db.execute(query)
+    order = res.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+
+    receipt_bytes = generate_receipt_pdf(order)
+    return Response(
+        content=receipt_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=Receipt_{order.id}.pdf"},
     )
 
 
@@ -596,6 +659,158 @@ async def create_print_batch(
         "total_reports": batch.total_reports,
         "total_pages": batch.total_pages,
         "total_sheets": batch.total_sheets,
+    }
+
+
+@router.get("/batches")
+async def list_print_batches(
+    admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    query = (
+        select(PrintBatch)
+        .options(selectinload(PrintBatch.orders))
+        .order_by(desc(PrintBatch.created_at))
+    )
+    res = await db.execute(query)
+    batches = res.scalars().all()
+
+    items = []
+    for b in batches:
+        completed = sum(1 for o in b.orders if o.print_status == "Completed")
+        pct = round((completed / b.total_reports * 100), 1) if b.total_reports > 0 else 0.0
+        items.append({
+            "id": str(b.id),
+            "batch_name": b.batch_name,
+            "created_at": b.created_at,
+            "total_reports": b.total_reports,
+            "total_pages": b.total_pages,
+            "total_sheets": b.total_sheets,
+            "completed_reports": completed,
+            "progress_percent": pct,
+        })
+    return {"batches": items}
+
+
+@router.get("/batches/{batch_id}")
+async def get_print_batch(
+    batch_id: str,
+    sort_by: str = Query("enrollment", description="Sort by enrollment or submission_time or name"),
+    order_dir: str = Query("asc", description="Sort direction asc or desc"),
+    admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        b_uuid = UUID(batch_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid batch ID.")
+
+    query = (
+        select(PrintBatch)
+        .options(
+            selectinload(PrintBatch.orders).selectinload(Order.student),
+            selectinload(PrintBatch.orders).selectinload(Order.report),
+        )
+        .where(PrintBatch.id == b_uuid)
+    )
+    res = await db.execute(query)
+    batch = res.scalar_one_or_none()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Print batch not found.")
+
+    orders = list(batch.orders)
+    reverse = (order_dir.lower() == "desc")
+    if sort_by == "submission_time":
+        orders.sort(key=lambda o: o.created_at, reverse=reverse)
+    elif sort_by == "name":
+        orders.sort(key=lambda o: o.student.full_name.lower(), reverse=reverse)
+    else:  # enrollment
+        orders.sort(key=lambda o: o.student.enrollment_number.lower(), reverse=reverse)
+
+    completed = sum(1 for o in batch.orders if o.print_status == "Completed")
+    pct = round((completed / batch.total_reports * 100), 1) if batch.total_reports > 0 else 0.0
+
+    return {
+        "id": str(batch.id),
+        "batch_name": batch.batch_name,
+        "created_at": batch.created_at,
+        "total_reports": batch.total_reports,
+        "total_pages": batch.total_pages,
+        "total_sheets": batch.total_sheets,
+        "completed_reports": completed,
+        "progress_percent": pct,
+        "orders": [
+            {
+                "order_id": o.id,
+                "student_name": o.student.full_name,
+                "enrollment_number": o.student.enrollment_number,
+                "mobile_number": o.student.mobile_number,
+                "original_filename": o.report.original_filename,
+                "page_count": o.report.page_count,
+                "total_sheets": o.report.normal_sheets + o.report.special_sheets,
+                "total_amount": float(o.report.total_amount),
+                "print_status": o.print_status,
+                "created_at": o.created_at,
+                "completed_at": o.completed_at,
+            }
+            for o in orders
+        ],
+    }
+
+
+@router.post("/batches/{batch_id}/orders/{order_id}/toggle-complete")
+async def toggle_batch_order_complete(
+    batch_id: str,
+    order_id: str,
+    admin: Admin = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        b_uuid = UUID(batch_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid batch ID.")
+
+    query = select(Order).where(Order.id == order_id, Order.batch_id == b_uuid)
+    res = await db.execute(query)
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found in this batch.")
+
+    from_status = order.print_status
+    if order.print_status == "Completed":
+        order.print_status = "Printing"
+        order.completed_at = None
+    else:
+        order.print_status = "Completed"
+        order.completed_at = datetime.now(timezone.utc)
+
+    db.add(
+        ActivityLog(
+            order_id=order.id,
+            actor_type="admin",
+            actor_id=admin.email,
+            from_state=from_status,
+            to_state=order.print_status,
+            note=f"Per-report completion toggled in batch {batch_id}",
+        )
+    )
+    await db.commit()
+
+    # Recalculate batch stats
+    batch_res = await db.execute(
+        select(PrintBatch).options(selectinload(PrintBatch.orders)).where(PrintBatch.id == b_uuid)
+    )
+    batch = batch_res.scalar_one_or_none()
+    completed = sum(1 for o in batch.orders if o.print_status == "Completed")
+    pct = round((completed / batch.total_reports * 100), 1) if batch.total_reports > 0 else 0.0
+
+    return {
+        "status": "success",
+        "order_id": order.id,
+        "print_status": order.print_status,
+        "completed_reports": completed,
+        "total_reports": batch.total_reports,
+        "progress_percent": pct,
     }
 
 

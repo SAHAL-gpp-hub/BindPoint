@@ -4,9 +4,16 @@ import {
   OrderDetail,
   DashboardMetrics,
   OrderListItem,
+  BatchSummary,
+  BatchDetail,
 } from "../types";
 
 const BASE_URL = "/api/v1";
+
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(^|;)\s*csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[2]) : sessionStorage.getItem("admin_csrf_token");
+}
 
 class ApiError extends Error {
   code?: string;
@@ -151,17 +158,26 @@ export const api = {
   },
 
   // Admin Endpoints
-  async adminLogin(email: string, password: string): Promise<{ token: string; admin: any }> {
+  async adminLogin(email: string, password: string): Promise<{ token: string; csrf_token?: string; admin: any }> {
     const res = await fetch(`${BASE_URL}/admin/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    return handleResponse(res);
+    const data = await handleResponse<{ token: string; csrf_token?: string; admin: any }>(res);
+    if (data.csrf_token) {
+      sessionStorage.setItem("admin_csrf_token", data.csrf_token);
+    }
+    return data;
   },
 
   async adminLogout(): Promise<void> {
-    await fetch(`${BASE_URL}/admin/auth/logout`, { method: "POST" });
+    sessionStorage.removeItem("admin_csrf_token");
+    const csrf = getCsrfToken();
+    await fetch(`${BASE_URL}/admin/auth/logout`, {
+      method: "POST",
+      headers: csrf ? { "X-CSRF-Token": csrf } : {},
+    });
   },
 
   async adminMe(): Promise<any> {
@@ -178,6 +194,8 @@ export const api = {
     q?: string;
     payment_status?: string;
     print_status?: string;
+    date_from?: string;
+    date_to?: string;
     page?: number;
     limit?: number;
     sort_by?: string;
@@ -187,6 +205,8 @@ export const api = {
     if (params.q) url.searchParams.set("q", params.q);
     if (params.payment_status) url.searchParams.set("payment_status", params.payment_status);
     if (params.print_status) url.searchParams.set("print_status", params.print_status);
+    if (params.date_from) url.searchParams.set("date_from", params.date_from);
+    if (params.date_to) url.searchParams.set("date_to", params.date_to);
     if (params.page) url.searchParams.set("page", String(params.page));
     if (params.limit) url.searchParams.set("limit", String(params.limit));
     if (params.sort_by) url.searchParams.set("sort_by", params.sort_by);
@@ -202,48 +222,93 @@ export const api = {
   },
 
   async confirmPayment(orderId: string, receivedAmount?: number): Promise<void> {
+    const csrf = getCsrfToken();
     const res = await fetch(`${BASE_URL}/admin/orders/${orderId}/payment/confirm`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
       body: JSON.stringify({ received_amount: receivedAmount }),
     });
     return handleResponse(res);
   },
 
   async rejectPayment(orderId: string, reason: string): Promise<void> {
+    const csrf = getCsrfToken();
     const res = await fetch(`${BASE_URL}/admin/orders/${orderId}/payment/reject`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
       body: JSON.stringify({ reason }),
     });
     return handleResponse(res);
   },
 
   async updatePrintStatus(orderId: string, printStatus: string, note?: string): Promise<void> {
+    const csrf = getCsrfToken();
     const res = await fetch(`${BASE_URL}/admin/orders/${orderId}/print-status`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
       body: JSON.stringify({ print_status: printStatus, note }),
     });
     return handleResponse(res);
   },
 
   async createBatch(orderIds: string[], batchName?: string): Promise<any> {
+    const csrf = getCsrfToken();
     const res = await fetch(`${BASE_URL}/admin/batches`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
       body: JSON.stringify({ order_ids: orderIds, batch_name: batchName }),
     });
     return handleResponse(res);
   },
 
   async exportBatchZip(orderIds: string[]): Promise<Blob> {
+    const csrf = getCsrfToken();
     const res = await fetch(`${BASE_URL}/admin/batches/export-zip`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
       body: JSON.stringify({ order_ids: orderIds }),
     });
     if (!res.ok) throw new ApiError("Failed to generate ZIP download", res.status);
     return res.blob();
+  },
+
+  async listBatches(): Promise<{ batches: BatchSummary[] }> {
+    const res = await fetch(`${BASE_URL}/admin/batches`);
+    return handleResponse(res);
+  },
+
+  async getBatchDetail(batchId: string, sortBy = "enrollment", orderDir = "asc"): Promise<BatchDetail> {
+    const url = new URL(`${BASE_URL}/admin/batches/${batchId}`, window.location.origin);
+    url.searchParams.set("sort_by", sortBy);
+    url.searchParams.set("order_dir", orderDir);
+    const res = await fetch(url.toString());
+    return handleResponse(res);
+  },
+
+  async toggleBatchOrderComplete(batchId: string, orderId: string): Promise<any> {
+    const csrf = getCsrfToken();
+    const res = await fetch(`${BASE_URL}/admin/batches/${batchId}/orders/${orderId}/toggle-complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+    });
+    return handleResponse(res);
   },
 };

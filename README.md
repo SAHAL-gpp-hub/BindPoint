@@ -23,13 +23,15 @@ cp .env.example .env
 ```
 *(Configure `ADMIN_PASSWORD`, `UPI_ID`, `PAYEE_NAME`, and `COLLECTION_INSTRUCTIONS` if needed.)*
 
-### Step 3: Install Backend Dependencies & Initialize DB
+### Step 3: Install Backend Dependencies, Initialize DB & Seed Demo Data
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r backend/requirements.txt
+pip install -r requirements.txt
 PYTHONPATH=. python backend/app/init_db.py
+PYTHONPATH=. python scripts/seed_demo_data.py
 ```
+*(The seed script populates sample students, uploaded PDF reports, payment verifications, and an active print batch with 50% completion progress).*
 
 ### Step 4: Install Frontend Dependencies & Build
 ```bash

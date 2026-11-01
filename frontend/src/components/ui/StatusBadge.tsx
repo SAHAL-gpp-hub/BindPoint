@@ -8,27 +8,35 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const normalized = status.trim().toLowerCase();
 
-  let styles = "bg-surface-subtle text-ink-secondary border-line";
+  let badgeClasses = "bg-surface-subtle text-ink-secondary border-line";
+  let dotColor = "bg-ink-muted";
 
   if (normalized.includes("successful") || normalized.includes("confirmed") || normalized.includes("ready")) {
-    styles = "bg-emerald-50 text-emerald-800 border-emerald-200";
+    badgeClasses = "bg-emerald-50/90 text-emerald-800 border-emerald-200/90 font-medium";
+    dotColor = "bg-emerald-500";
   } else if (normalized.includes("verification required")) {
-    styles = "bg-amber-50 text-amber-900 border-amber-300 font-medium";
+    badgeClasses = "bg-amber-50 text-amber-900 border-amber-300/80 font-medium";
+    dotColor = "bg-amber-500 animate-pulse";
   } else if (normalized.includes("pending") || normalized.includes("submitted")) {
-    styles = "bg-amber-50/60 text-amber-800 border-amber-200";
+    badgeClasses = "bg-amber-50/70 text-amber-800 border-amber-200/80";
+    dotColor = "bg-amber-400";
   } else if (normalized.includes("printing")) {
-    styles = "bg-blue-50 text-blue-800 border-blue-200 animate-pulse";
+    badgeClasses = "bg-blue-50 text-blue-800 border-blue-200 font-medium";
+    dotColor = "bg-blue-500 animate-ping";
   } else if (normalized.includes("completed")) {
-    styles = "bg-teal-50 text-teal-900 border-teal-200 font-medium";
+    badgeClasses = "bg-teal-50 text-teal-900 border-teal-200 font-semibold";
+    dotColor = "bg-teal-600";
   } else if (normalized.includes("failed") || normalized.includes("rejected") || normalized.includes("cancelled")) {
-    styles = "bg-red-50 text-red-800 border-red-200";
+    badgeClasses = "bg-rose-50 text-rose-800 border-rose-200";
+    dotColor = "bg-rose-500";
   }
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono tracking-tight border uppercase ${styles}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono tracking-tight border shadow-xs ${badgeClasses}`}
     >
-      {status}
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+      <span>{status}</span>
     </span>
   );
 };
