@@ -8,6 +8,8 @@ from backend.app.config import settings
 
 async def init_db():
     print("Connecting to database and creating tables if not present...")
+    # Ensure storage paths exist before initializing sqlite or local files
+    settings.uploads_path
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("Database tables initialized successfully.")

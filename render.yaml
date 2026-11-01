@@ -12,12 +12,24 @@ services:
         value: production
       - key: DEBUG
         value: "false"
+      - key: PROJECT_NAME
+        value: "BindPoint"
       - key: DATABASE_URL
         value: sqlite+aiosqlite:///storage/print_station.db
       - key: SYNC_DATABASE_URL
         value: sqlite:///storage/print_station.db
       - key: SECRET_KEY
         generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@bindpoint.local
+      - key: ADMIN_PASSWORD
+        value: AdminSecurePassword2026!
+      - key: UPI_ID
+        value: printstation@okaxis
+      - key: PAYEE_NAME
+        value: "BindPoint Print Station"
+      - key: COLLECTION_INSTRUCTIONS
+        value: "Collect your printed report from the Project Lab on weekdays between 3:00 PM and 5:00 PM. Present your Order ID or digital receipt."
       - key: KEEP_ALIVE_INTERVAL_SECONDS
         value: "240"
       - key: CORS_ORIGIN_REGEX
