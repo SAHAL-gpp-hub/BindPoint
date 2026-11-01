@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     SUBMISSION_RATE_LIMIT: str = "10/minute"
     ADMIN_LOGIN_RATE_LIMIT: str = "5/minute"
 
+    # Cloud Deployment & Free Tier Keep-Alive
+    # Render automatically injects RENDER_EXTERNAL_URL (e.g. https://bindpoint.onrender.com)
+    RENDER_EXTERNAL_URL: Optional[str] = None
+    KEEP_ALIVE_URL: Optional[str] = None
+    KEEP_ALIVE_INTERVAL_SECONDS: int = 240  # 4 minutes (prevents 15-min Render sleep)
+    CORS_ORIGIN_REGEX: Optional[str] = r"^https://.*\.vercel\.app$"
+
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / ".env"),
         env_file_encoding="utf-8",

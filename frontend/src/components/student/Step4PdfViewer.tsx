@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { ReportUploadResponse } from "../../types";
-import { api } from "../../lib/api";
+import { api, API_ORIGIN } from "../../lib/api";
 import {
   ChevronLeft,
   ChevronRight,
@@ -51,7 +51,7 @@ export const Step4PdfViewer: React.FC<Step4Props> = ({
   // Load PDF Document
   useEffect(() => {
     let isCancelled = false;
-    const url = `/api/v1/reports/${report.report_id}/preview?token=${encodeURIComponent(
+    const url = `${API_ORIGIN}/api/v1/reports/${report.report_id}/preview?token=${encodeURIComponent(
       report.preview_token
     )}`;
 

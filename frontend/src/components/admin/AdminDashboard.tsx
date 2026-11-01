@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { OrderListItem, DashboardMetrics, OrderDetail } from "../../types";
-import { api } from "../../lib/api";
+import { api, API_ORIGIN } from "../../lib/api";
 import { StatusBadge } from "../ui/StatusBadge";
 import { PaymentVerificationModal } from "./PaymentVerificationModal";
 import { AdminOrderDetailModal } from "./AdminOrderDetailModal";
@@ -192,7 +192,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </button>
 
           <a
-            href="/api/v1/admin/export/csv"
+            href={`${API_ORIGIN}/api/v1/admin/export/csv`}
             download
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-surface border border-line rounded-xl text-xs font-semibold text-ink hover:bg-surface-subtle transition-all shadow-xs active:scale-[0.98]"
           >
@@ -201,7 +201,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </a>
 
           <a
-            href="/api/v1/admin/export/xlsx"
+            href={`${API_ORIGIN}/api/v1/admin/export/xlsx`}
             download
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-surface border border-line rounded-xl text-xs font-semibold text-ink hover:bg-surface-subtle transition-all shadow-xs active:scale-[0.98]"
           >
@@ -526,7 +526,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
                         {/* Direct Receipt PDF Download */}
                         <a
-                          href={`/api/v1/admin/orders/${order.order_id}/receipt`}
+                          href={`${API_ORIGIN}/api/v1/admin/orders/${order.order_id}/receipt`}
                           download
                           className="inline-flex items-center p-1.5 rounded-lg hover:bg-surface-subtle text-ink-secondary hover:text-ink border border-line shadow-xs transition-all"
                           title="Download Official Receipt PDF"

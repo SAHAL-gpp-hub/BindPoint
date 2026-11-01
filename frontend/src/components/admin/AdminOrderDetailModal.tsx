@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { OrderDetail } from "../../types";
-import { api } from "../../lib/api";
+import { api, API_ORIGIN } from "../../lib/api";
 import { StatusBadge } from "../ui/StatusBadge";
 import {
   X,
@@ -50,8 +50,8 @@ export const AdminOrderDetailModal: React.FC<AdminOrderDetailModalProps> = ({
     }
   };
 
-  const pdfUrl = `/api/v1/admin/orders/${order.order_id}/pdf`;
-  const receiptUrl = `/api/v1/admin/orders/${order.order_id}/receipt`;
+  const pdfUrl = `${API_ORIGIN}/api/v1/admin/orders/${order.order_id}/pdf`;
+  const receiptUrl = `${API_ORIGIN}/api/v1/admin/orders/${order.order_id}/receipt`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/50 backdrop-blur-sm">

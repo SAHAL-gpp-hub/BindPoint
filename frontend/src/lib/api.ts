@@ -8,7 +8,11 @@ import {
   BatchDetail,
 } from "../types";
 
-const BASE_URL = "/api/v1";
+export const API_ORIGIN = import.meta.env.VITE_API_URL
+  ? String(import.meta.env.VITE_API_URL).replace(/\/+$/, "")
+  : "";
+
+const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 function getCsrfToken(): string | null {
   const match = document.cookie.match(/(^|;)\s*csrf_token=([^;]+)/);

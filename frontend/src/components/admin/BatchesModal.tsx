@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BatchSummary, BatchDetail } from "../../types";
-import { api } from "../../lib/api";
+import { api, API_ORIGIN } from "../../lib/api";
 import { StatusBadge } from "../ui/StatusBadge";
 import {
   X,
@@ -392,7 +392,7 @@ export const BatchesModal: React.FC<BatchesModalProps> = ({
 
                               <td className="py-3 px-3 text-right">
                                 <a
-                                  href={`/api/v1/admin/orders/${o.order_id}/pdf`}
+                                  href={`${API_ORIGIN}/api/v1/admin/orders/${o.order_id}/pdf`}
                                   download
                                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline bg-surface-subtle px-2 py-1 rounded-md border border-line"
                                 >

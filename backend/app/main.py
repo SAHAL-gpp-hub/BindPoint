@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +8,7 @@ from slowapi.errors import RateLimitExceeded
 
 from backend.app.config import settings
 from backend.app.core.limiter import limiter
+from backend.app.core.keep_alive import start_keep_alive
 from backend.app.init_db import init_db
 from backend.app.api.v1.reports import router as reports_router
 from backend.app.api.v1.orders import router as orders_router
@@ -23,7 +25,20 @@ async def lifespan(app: FastAPI):
     settings.batches_path
     # Initialize database & seed admin
     await init_db()
-    yield
+
+    # Launch ultra-lightweight keep-alive runner if running on Render or custom URL configured
+    keep_alive_target = settings.KEEP_ALIVE_URL or settings.RENDER_EXTERNAL_URL
+    keep_alive_task = None
+    if keep_alive_target:
+        keep_alive_task = asyncio.create_task(
+            start_keep_alive(keep_alive_target, settings.KEEP_ALIVE_INTERVAL_SECONDS)
+        )
+
+    try:
+        yield
+    finally:
+        if keep_alive_task:
+            keep_alive_task.cancel()
 
 
 app = FastAPI(
@@ -47,6 +62,7 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=settings.CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
